@@ -301,6 +301,37 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       cursor: pointer;
     }
 
+    .attachment.file {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--ink);
+    }
+
+    .attachment-name {
+      font-family: 'Space Mono', 'Courier New', monospace;
+      word-break: break-all;
+    }
+
+    .message-files {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .message-file {
+      border: 1px solid var(--line);
+      background: rgba(22, 32, 36, 0.06);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-family: 'Space Mono', 'Courier New', monospace;
+    }
+
     .send-row {
       display: flex;
       align-items: center;
@@ -386,10 +417,12 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         </label>
         <div class="control-buttons">
           <button class="pill-button secondary" id="add-image">Add image</button>
+          <button class="pill-button secondary" id="add-file">Add file</button>
           <button class="pill-button secondary" id="reset">New chat</button>
         </div>
       </div>
       <input id="image-input" type="file" accept="image/*" multiple hidden />
+      <input id="file-input" type="file" multiple hidden />
       <div class="attachments" id="attachments" hidden></div>
       <textarea id="input" placeholder="Ask something using Copilot Responses..."></textarea>
       <div class="send-row">
@@ -406,7 +439,9 @@ export function getWebviewHtml(webview: vscode.Webview): string {
     const sendButton = document.getElementById('send');
     const resetButton = document.getElementById('reset');
     const addImageButton = document.getElementById('add-image');
+    const addFileButton = document.getElementById('add-file');
     const imageInput = document.getElementById('image-input');
+    const fileInput = document.getElementById('file-input');
     const attachmentsContainer = document.getElementById('attachments');
     const signInButton = document.getElementById('sign-in');
     const modelInput = document.getElementById('model');
@@ -432,11 +467,13 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       resetButton.disabled = busy;
       input.disabled = busy;
       addImageButton.disabled = busy;
+      addFileButton.disabled = busy;
       imageInput.disabled = busy;
+      fileInput.disabled = busy;
       updateSendState();
     };
 
-    const addMessage = (role, text, images) => {
+    const addMessage = (role, text, images, files) => {
       const node = document.createElement('div');
       node.className = 'message ' + role;
 
@@ -462,6 +499,23 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         }
         if (grid.childNodes.length > 0) {
           node.appendChild(grid);
+        }
+      }
+
+      if (Array.isArray(files) && files.length > 0) {
+        const list = document.createElement('div');
+        list.className = 'message-files';
+        for (const file of files) {
+          if (!file) {
+            continue;
+          }
+          const pill = document.createElement('div');
+          pill.className = 'message-file';
+          pill.textContent = file.name || 'File';
+          list.appendChild(pill);
+        }
+        if (list.childNodes.length > 0) {
+          node.appendChild(list);
         }
       }
 
@@ -497,15 +551,41 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       reader.readAsDataURL(file);
     });
 
+    const arrayBufferToBase64 = (buffer) => {
+      const bytes = new Uint8Array(buffer);
+      const chunkSize = 0x8000;
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    };
+
+    const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Failed to read file.'));
+      reader.onload = () => resolve(arrayBufferToBase64(reader.result));
+      reader.readAsArrayBuffer(file);
+    });
+
     const renderAttachments = () => {
       attachmentsContainer.innerHTML = '';
       attachmentsContainer.hidden = attachments.length === 0;
       for (const item of attachments) {
         const card = document.createElement('div');
-        card.className = 'attachment';
-        const img = document.createElement('img');
-        img.src = item.dataUrl;
-        img.alt = item.name || 'Attachment';
+        card.className = 'attachment' + (item.kind === 'file' ? ' file' : '');
+        if (item.kind === 'image') {
+          const img = document.createElement('img');
+          img.src = item.dataUrl;
+          img.alt = item.name || 'Attachment';
+          card.appendChild(img);
+        } else {
+          const label = document.createElement('div');
+          label.className = 'attachment-name';
+          label.textContent = item.name || 'File';
+          label.title = item.name || 'File';
+          card.appendChild(label);
+        }
         const removeButton = document.createElement('button');
         removeButton.type = 'button';
         removeButton.textContent = 'x';
@@ -520,7 +600,6 @@ export function getWebviewHtml(webview: vscode.Webview): string {
             updateSendState();
           }
         });
-        card.appendChild(img);
         card.appendChild(removeButton);
         attachmentsContainer.appendChild(card);
       }
@@ -531,10 +610,11 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       attachmentsContainer.innerHTML = '';
       attachmentsContainer.hidden = true;
       imageInput.value = '';
+      fileInput.value = '';
       updateSendState();
     };
 
-    const addFiles = async (fileList) => {
+    const addImageFiles = async (fileList) => {
       const files = Array.from(fileList);
       for (const file of files) {
         if (!file.type.startsWith('image/')) {
@@ -545,6 +625,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
           const dataUrl = await readFileAsDataUrl(file);
           attachments.push({
             id: String(attachmentCounter++),
+            kind: 'image',
             name: file.name,
             type: file.type,
             size: file.size,
@@ -558,18 +639,53 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       updateSendState();
     };
 
+    const addFileAttachments = async (fileList) => {
+      const files = Array.from(fileList);
+      for (const file of files) {
+        if (file.type && file.type.startsWith('image/')) {
+          addMessage('error', 'Use Add image for image files.');
+          continue;
+        }
+        try {
+          const data = await readFileAsBase64(file);
+          attachments.push({
+            id: String(attachmentCounter++),
+            kind: 'file',
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            data
+          });
+        } catch (error) {
+          addMessage('error', 'Failed to read file.');
+        }
+      }
+      renderAttachments();
+      updateSendState();
+    };
+
     const sendMessage = () => {
       const text = input.value.trim();
-      const images = attachments.map((item) => ({
-        dataUrl: item.dataUrl,
-        name: item.name,
-        type: item.type,
-        size: item.size
-      }));
-      if (!text && images.length === 0) {
+      const images = attachments
+        .filter((item) => item.kind === 'image')
+        .map((item) => ({
+          dataUrl: item.dataUrl,
+          name: item.name,
+          type: item.type,
+          size: item.size
+        }));
+      const files = attachments
+        .filter((item) => item.kind === 'file')
+        .map((item) => ({
+          data: item.data,
+          name: item.name,
+          type: item.type,
+          size: item.size
+        }));
+      if (!text && images.length === 0 && files.length === 0) {
         return;
       }
-      addMessage('user', text, images);
+      addMessage('user', text, images, files);
       input.value = '';
       autoResize();
       showPending();
@@ -579,7 +695,8 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         type: 'send',
         text,
         model: modelInput.value.trim(),
-        images
+        images,
+        files
       });
     };
 
@@ -602,9 +719,23 @@ export function getWebviewHtml(webview: vscode.Webview): string {
     imageInput.addEventListener('change', (event) => {
       const files = event.target.files;
       if (files && files.length) {
-        addFiles(files);
+        addImageFiles(files);
       }
       imageInput.value = '';
+    });
+
+    addFileButton.addEventListener('click', () => {
+      if (!isBusy) {
+        fileInput.click();
+      }
+    });
+
+    fileInput.addEventListener('change', (event) => {
+      const files = event.target.files;
+      if (files && files.length) {
+        addFileAttachments(files);
+      }
+      fileInput.value = '';
     });
 
     resetButton.addEventListener('click', () => {

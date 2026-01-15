@@ -15,11 +15,24 @@ export type ChatImageInput = {
   detail?: 'low' | 'high' | 'auto';
 };
 
+export type ChatFileInput = {
+  data: string;
+  name?: string;
+  type?: string;
+  size?: number;
+};
+
 export type WebviewIncomingMessage =
   | { type: 'ready' }
   | { type: 'signIn' }
   | { type: 'reset' }
-  | { type: 'send'; text?: string; model?: string; images?: ChatImageInput[] };
+  | {
+      type: 'send';
+      text?: string;
+      model?: string;
+      images?: ChatImageInput[];
+      files?: ChatFileInput[];
+    };
 
 export type WebviewOutgoingMessage =
   | { type: 'status'; authenticated: boolean; login: string | null }

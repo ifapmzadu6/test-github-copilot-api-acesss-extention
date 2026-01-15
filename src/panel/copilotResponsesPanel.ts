@@ -9,12 +9,14 @@ import { CopilotAuth } from '../services/copilotAuth.js';
 import { CopilotResponsesService } from '../services/copilotResponsesService.js';
 import type {
   ChatImageInput,
+  ChatFileInput,
   ConversationInput,
   WebviewIncomingMessage,
   WebviewOutgoingMessage
 } from '../types.js';
 import { isRecord, toErrorMessage, toTrimmedString } from '../utils/guards.js';
 import { normalizeImageInputs } from '../utils/normalizeImageInputs.js';
+import { normalizeFileInputs } from '../utils/normalizeFileInputs.js';
 import { getWebviewHtml } from '../webview/template.js';
 
 export class CopilotResponsesPanel {
@@ -125,13 +127,14 @@ export class CopilotResponsesPanel {
   ): Promise<void> {
     const text = toTrimmedString(message.text) ?? '';
     const images = normalizeImageInputs(message.images);
-    if (!text && images.length === 0) {
+    const files = normalizeFileInputs(message.files);
+    if (!text && images.length === 0 && files.length === 0) {
       return;
     }
 
     const model = toTrimmedString(message.model) ?? DEFAULT_MODEL;
 
-    this.conversation.push(this.buildUserMessage(text, images));
+    this.conversation.push(this.buildUserMessage(text, images, files));
 
     try {
       const reply = await this.service.sendChat(model, this.conversation, this.copilotSessionId);
@@ -152,8 +155,12 @@ export class CopilotResponsesPanel {
     }
   }
 
-  private buildUserMessage(text: string, images: ChatImageInput[]): EasyInputMessage {
-    if (!images.length) {
+  private buildUserMessage(
+    text: string,
+    images: ChatImageInput[],
+    files: ChatFileInput[]
+  ): EasyInputMessage {
+    if (!images.length && !files.length) {
       return { role: 'user', content: text };
     }
 
@@ -166,6 +173,14 @@ export class CopilotResponsesPanel {
         type: 'input_image',
         image_url: image.dataUrl,
         detail: image.detail ?? 'auto'
+      });
+    }
+
+    for (const file of files) {
+      content.push({
+        type: 'input_file',
+        file_data: file.data,
+        filename: file.name
       });
     }
 

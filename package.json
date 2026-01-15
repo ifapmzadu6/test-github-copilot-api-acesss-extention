@@ -1,0 +1,49 @@
+{
+  "name": "copilot-responses-chat",
+  "displayName": "Copilot Responses Chat",
+  "description": "GitHub sign-in with Copilot Responses API chat in VS Code.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:copilotResponsesChat.open"
+  ],
+  "main": "./dist/extension.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "watch": "tsc -watch -p .",
+    "vscode:prepublish": "npm run build"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "copilotResponsesChat.open",
+        "title": "Copilot Responses: Open Chat"
+      }
+    ]
+  },
+  "dependencies": {
+    "openai": "^6.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.1",
+    "@types/vscode": "^1.85.0",
+    "@eslint/js": "^9.14.0",
+    "eslint": "^9.14.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.11.0",
+    "prettier": "^3.4.2",
+    "typescript-eslint": "^8.12.2",
+    "typescript": "^5.6.3"
+  }
+}

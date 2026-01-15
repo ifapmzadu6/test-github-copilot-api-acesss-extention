@@ -393,7 +393,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       <div class="attachments" id="attachments" hidden></div>
       <textarea id="input" placeholder="Ask something using Copilot Responses..."></textarea>
       <div class="send-row">
-        <span class="hint">Ctrl+Enter to send, Enter for newline.</span>
+        <span class="hint">Click Send to submit, Enter for newline.</span>
         <button class="pill-button" id="send">Send</button>
       </div>
     </div>
@@ -590,13 +590,6 @@ export function getWebviewHtml(webview: vscode.Webview): string {
     };
 
     input.addEventListener('input', autoResize);
-
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && event.ctrlKey) {
-        event.preventDefault();
-        sendMessage();
-      }
-    });
 
     sendButton.addEventListener('click', sendMessage);
 

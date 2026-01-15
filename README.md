@@ -1,12 +1,12 @@
 # Copilot Responses Chat (VS Code Extension)
 
-This extension signs in to GitHub using the VS Code authentication API and uses the credentials to call `https://api.githubcopilot.com/responses` with the OpenAI Responses API format. It provides a simple chat UI inside VS Code.
+This extension signs in to GitHub using the VS Code authentication API and uses the credentials to call the Copilot Responses API with the OpenAI Responses API format. It provides a simple chat UI inside VS Code.
 
 ## Usage
 
 1. Open the command palette and run `Copilot Responses: Open Chat`.
 2. Click **Sign in** if prompted.
-3. Enter a prompt, optionally attach images, and press **Ctrl+Enter** or click **Send**.
+3. Enter a prompt, optionally attach images, and click **Send**.
 
 ## Development
 

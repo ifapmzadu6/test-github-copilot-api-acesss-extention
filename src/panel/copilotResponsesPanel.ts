@@ -137,7 +137,12 @@ export class CopilotResponsesPanel {
     this.conversation.push(this.buildUserMessage(text, images, files));
 
     try {
-      const reply = await this.service.sendChat(model, this.conversation, this.copilotSessionId);
+      const reply = await this.service.sendChat(
+        model,
+        this.conversation,
+        this.copilotSessionId,
+        images.length > 0
+      );
       const replyText = reply.text || '[No text output returned]';
       this.conversation.push({ role: 'assistant', content: replyText });
 

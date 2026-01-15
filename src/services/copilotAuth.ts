@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode';
-import { COPILOT_TOKEN_URL, HEADERS } from '../constants.js';
+import { BASE_HEADERS, COPILOT_TOKEN_URL } from '../constants.js';
 
 const TOKEN_REFRESH_BUFFER_MS = 60_000;
 
@@ -56,7 +56,7 @@ export class CopilotAuth {
     const response = await fetch(COPILOT_TOKEN_URL, {
       method: 'GET',
       headers: {
-        ...HEADERS,
+        ...BASE_HEADERS,
         Authorization: `token ${session.accessToken}`,
         Accept: 'application/json'
       }

@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { COPILOT_API_BASE_URL, HEADERS } from '../constants.js';
+import { COPILOT_API_BASE_URL, DEFAULT_INSTRUCTIONS, HEADERS } from '../constants.js';
 import type { CopilotUsage, ConversationInput } from '../types.js';
 import { isRecord } from '../utils/guards.js';
 import { extractOutputText } from '../utils/responseParsing.js';
@@ -26,6 +26,7 @@ export class CopilotResponsesService {
       {
         model,
         input,
+        instructions: DEFAULT_INSTRUCTIONS,
         stream: false
       },
       {

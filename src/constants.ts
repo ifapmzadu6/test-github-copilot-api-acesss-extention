@@ -1,6 +1,7 @@
 export const COPILOT_TOKEN_URL = 'https://api.github.com/copilot_internal/v2/token';
 export const COPILOT_API_BASE_URL = 'https://api.githubcopilot.com';
 export const DEFAULT_MODEL = 'gpt-5-mini';
+export const DEFAULT_INSTRUCTIONS = 'You are a helpful assistant.';
 export const GITHUB_SCOPES = ['read:user'] as const;
 
 export const HEADERS = {

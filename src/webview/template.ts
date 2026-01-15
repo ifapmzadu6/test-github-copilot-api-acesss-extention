@@ -551,23 +551,6 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       reader.readAsDataURL(file);
     });
 
-    const arrayBufferToBase64 = (buffer) => {
-      const bytes = new Uint8Array(buffer);
-      const chunkSize = 0x8000;
-      let binary = '';
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-      }
-      return btoa(binary);
-    };
-
-    const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('Failed to read file.'));
-      reader.onload = () => resolve(arrayBufferToBase64(reader.result));
-      reader.readAsArrayBuffer(file);
-    });
-
     const renderAttachments = () => {
       attachmentsContainer.innerHTML = '';
       attachmentsContainer.hidden = attachments.length === 0;
@@ -647,7 +630,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
           continue;
         }
         try {
-          const data = await readFileAsBase64(file);
+          const data = await readFileAsDataUrl(file);
           attachments.push({
             id: String(attachmentCounter++),
             kind: 'file',

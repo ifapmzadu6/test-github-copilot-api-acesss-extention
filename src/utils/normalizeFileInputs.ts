@@ -1,16 +1,12 @@
 import type { ChatFileInput } from '../types.js';
 import { isRecord, toTrimmedString } from './guards.js';
 
-const stripDataUrlPrefix = (value: string): string => {
-  if (!value.startsWith('data:')) {
-    return value;
+const ensureDataUrl = (data: string, mimeType?: string): string => {
+  if (data.startsWith('data:')) {
+    return data;
   }
-  const marker = 'base64,';
-  const index = value.indexOf(marker);
-  if (index === -1) {
-    return value;
-  }
-  return value.slice(index + marker.length);
+  const safeType = mimeType && mimeType.trim() ? mimeType.trim() : 'application/octet-stream';
+  return `data:${safeType};base64,${data}`;
 };
 
 export const normalizeFileInputs = (value: unknown): ChatFileInput[] => {
@@ -22,16 +18,17 @@ export const normalizeFileInputs = (value: unknown): ChatFileInput[] => {
     if (!isRecord(item)) {
       continue;
     }
-    const rawData = toTrimmedString(item.data) ?? toTrimmedString(item.file_data);
-    if (!rawData) {
+    const data = toTrimmedString(item.data) ?? toTrimmedString(item.file_data);
+    if (!data) {
       continue;
     }
-    const data = stripDataUrlPrefix(rawData);
+    const type = toTrimmedString(item.type) ?? undefined;
+    const dataUrl = ensureDataUrl(data, type);
 
     results.push({
-      data,
+      data: dataUrl,
       name: toTrimmedString(item.name) ?? undefined,
-      type: toTrimmedString(item.type) ?? undefined,
+      type,
       size: typeof item.size === 'number' ? item.size : undefined
     });
   }

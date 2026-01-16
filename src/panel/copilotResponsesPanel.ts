@@ -1,7 +1,7 @@
 import type {
-  EasyInputMessage,
-  ResponseInputMessageContentList
-} from 'openai/resources/responses/responses';
+  ChatCompletionContentPart,
+  ChatCompletionMessageParam
+} from 'openai/resources/chat/completions';
 import * as vscode from 'vscode';
 import { randomUUID } from 'node:crypto';
 import { DEFAULT_MODEL, GITHUB_SCOPES } from '../constants.js';
@@ -150,7 +150,8 @@ export class CopilotResponsesPanel {
         type: 'assistant',
         text: replyText,
         model,
-        usage: reply.usage
+        usage: reply.usage,
+        apiMode: reply.apiMode
       });
     } catch (error) {
       this.postMessage({
@@ -160,32 +161,42 @@ export class CopilotResponsesPanel {
     }
   }
 
+  private extractBase64Data(dataUrl: string): string {
+    const marker = 'base64,';
+    const index = dataUrl.indexOf(marker);
+    return index === -1 ? dataUrl : dataUrl.slice(index + marker.length);
+  }
+
   private buildUserMessage(
     text: string,
     images: ChatImageInput[],
     files: ChatFileInput[]
-  ): EasyInputMessage {
+  ): ChatCompletionMessageParam {
     if (!images.length && !files.length) {
       return { role: 'user', content: text };
     }
 
-    const content: ResponseInputMessageContentList = [];
+    const content: ChatCompletionContentPart[] = [];
     if (text) {
-      content.push({ type: 'input_text', text });
+      content.push({ type: 'text', text });
     }
     for (const image of images) {
       content.push({
-        type: 'input_image',
-        image_url: image.dataUrl,
-        detail: image.detail ?? 'auto'
+        type: 'image_url',
+        image_url: {
+          url: image.dataUrl,
+          detail: image.detail ?? 'auto'
+        }
       });
     }
 
     for (const file of files) {
       content.push({
-        type: 'input_file',
-        file_data: file.data,
-        filename: file.name
+        type: 'file',
+        file: {
+          file_data: this.extractBase64Data(file.data),
+          filename: file.name
+        }
       });
     }
 

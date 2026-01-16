@@ -7,6 +7,8 @@ export const GITHUB_SCOPES = ['read:user'] as const;
 export const BASE_HEADERS = {
   'User-Agent': 'GitHubCopilotChat/0.26.7',
   'Editor-Version': 'vscode/1.99.3',
+  'Openai-Intent': 'conversation-edits',
+  'X-Initiator': 'user',
   'Editor-Plugin-Version': 'copilot-chat/0.26.7',
   'Copilot-Integration-Id': 'vscode-chat'
 } as const;

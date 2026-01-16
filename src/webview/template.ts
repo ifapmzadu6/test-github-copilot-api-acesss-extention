@@ -332,6 +332,23 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       font-family: 'Space Mono', 'Courier New', monospace;
     }
 
+    .message-meta {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .message-meta-item {
+      border: 1px solid var(--line);
+      background: rgba(22, 32, 36, 0.05);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      color: var(--muted);
+    }
+
     .send-row {
       display: flex;
       align-items: center;
@@ -473,7 +490,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
       updateSendState();
     };
 
-    const addMessage = (role, text, images, files) => {
+    const addMessage = (role, text, images, files, meta) => {
       const node = document.createElement('div');
       node.className = 'message ' + role;
 
@@ -517,6 +534,16 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         if (list.childNodes.length > 0) {
           node.appendChild(list);
         }
+      }
+
+      if (meta && meta.apiMode) {
+        const metaRow = document.createElement('div');
+        metaRow.className = 'message-meta';
+        const apiTag = document.createElement('span');
+        apiTag.className = 'message-meta-item';
+        apiTag.textContent = 'API: ' + meta.apiMode;
+        metaRow.appendChild(apiTag);
+        node.appendChild(metaRow);
       }
 
       messages.appendChild(node);
@@ -751,7 +778,7 @@ export function getWebviewHtml(webview: vscode.Webview): string {
         case 'assistant': {
           clearPending();
           setBusy(false);
-          addMessage('assistant', message.text || '');
+          addMessage('assistant', message.text || '', null, null, { apiMode: message.apiMode });
           return;
         }
         case 'error': {
